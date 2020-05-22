@@ -1,6 +1,6 @@
 import { isWebSocketCloseEvent, WebSocket } from 'https://deno.land/std/ws/mod.ts';
 import { v4 } from 'https://deno.land/std/uuid/mod.ts';
-import { IUser, IUserGroup, IEventMsgData} from './model/index.ts';
+import { IUserGroup, IEventMsgData, IMessagesData } from './model/index.ts';
 
 /**
  * userId: {
@@ -9,7 +9,7 @@ import { IUser, IUserGroup, IEventMsgData} from './model/index.ts';
  *  ws: WebSocket
  * }
  */
-const userMap: Map<string, IUser> = new Map();
+const userMap: Map<string, IUserGroup> = new Map();
 /**
  * groupName: [user1, user2]
  * {
@@ -19,6 +19,18 @@ const userMap: Map<string, IUser> = new Map();
  * }
  */
 const groupsMap: Map<string, IUserGroup[]> = new Map();
+/**
+ * groupName: [message1,message2,...]
+ * 
+ * {
+ *  userId: string,
+ *  name: string,
+ *  message: string
+ * }
+ */
+const messagesMap: Map<string, IMessagesData[]> = new Map();
+
+
 export default async function chat(ws: WebSocket) {
   console.log('connected');
 
@@ -26,16 +38,19 @@ export default async function chat(ws: WebSocket) {
 
   for await (let data of ws) {
     if (isWebSocketCloseEvent(data)) {
-      console.log("Close Connect ...")
-      const userObj = userMap.get(userId);
+      console.log("Close Connect ...");
 
+      const userObj = userMap.get(userId);
+      if (!userObj) {
+        break;
+      }
       let users: IUserGroup[] = groupsMap.get(userObj!.groupName) || [];
       users = users.filter((usr) => usr.userId !== userId);
 
       groupsMap.set(userObj!.groupName, users);
       userMap.delete(userId);
 
-      emitEvent(userObj!.groupName);
+      emitUserList(userObj!.groupName);
 
       break;
     }
@@ -44,10 +59,10 @@ export default async function chat(ws: WebSocket) {
       break;
     }
     const event: IEventMsgData = tmp;
-
+    let userObj: IUserGroup | undefined;
     switch (event.event) {
       case 'join':
-        const userObj = {
+        userObj = {
           userId,
           name: event.name,
           groupName: event.groupName,
@@ -60,24 +75,60 @@ export default async function chat(ws: WebSocket) {
         users.push(userObj);
         groupsMap.set(event.groupName, users);
 
-        emitEvent(event.groupName);
+        emitUserList(event.groupName);
+        emitPreviousMessage(event.groupName, ws)
         break;
-
+      case 'message':
+        userObj = userMap.get(userId);
+        const message: IMessagesData = {
+          userId,
+          name: userObj!.name,
+          message: event.data,
+        }
+        const messages = messagesMap.get(userObj!.groupName) || [];
+        messages.push(message);
+        messagesMap.set(userObj!.groupName, messages);
+        emitMessage(userObj!.groupName, message, userId);
+        break;
       default:
         break;
     }
   }
 }
-
-function emitEvent(groupName: string) {
+async function emitMessage(groupName: string, message: IMessagesData, senderId: string) {
   const users = groupsMap.get(groupName) || [];
-  for (const user of users) {
+
+  for await (const user of users) {
+    const tmpMessage = {
+      ...message,
+      sender: user.userId === senderId ? 'me' : senderId
+    }
+    const event = {
+      event: 'message',
+      data: tmpMessage
+    };
+    user.ws.send(JSON.stringify(event));
+  }
+}
+async function emitUserList(groupName: string) {
+  const users = groupsMap.get(groupName) || [];
+  for await (const user of users) {
     const event = {
       event: 'users',
       data: getDisplayUser(groupName)
     };
     user.ws.send(JSON.stringify(event));
   }
+}
+async function emitPreviousMessage(groupName: string, ws: WebSocket) {
+  const messages = messagesMap.get(groupName) || [];
+
+  const event = {
+    event: 'previousMessages',
+    data: messages
+  }
+
+  ws.send(JSON.stringify(event));
 }
 
 function getDisplayUser(groupName: string) {

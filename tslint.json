@@ -1,18 +1,11 @@
 {
-  "rulesDirectory": [
-    "tslint-plugin-prettier"
-  ],
   "extends": [
     "tslint:latest",
     "tslint-config-google",
-    "tslint-config-prettier"
+    "tslint-plugin-prettier"
   ],
   "linterOptions": {
-    "exclude": [
-      "config/**/*.js",
-      "node_modules/**/*.ts",
-      "coverage/lcov-report/*.js"
-    ]
+    "exclude": ["public", "public/**/*.js"]
   },
   "rules": {
     "prettier": [
@@ -40,7 +33,5 @@
     "object-literal-sort-keys": false,
     "object-literal-shorthand": false
   },
-  "jsRules": {
-    
-  }
+  "jsRules": {}
 }

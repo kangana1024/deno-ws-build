@@ -1,3 +1,4 @@
+/* tslint:disable */
 var ws;
 var chatUsersCtr = document.querySelector('#chatUsers');
 window.addEventListener('DOMContentLoaded', function () {

@@ -1,3 +1,4 @@
+/* tslint:disable */
 var ws;
 var chatUsersCtr = document.querySelector('#chatUsers');
 window.addEventListener('DOMContentLoaded', function () {
@@ -8,13 +9,13 @@ window.addEventListener('DOMContentLoaded', function () {
 
 function onConnectionOpen() {
   console.log('Connection Opened');
-  const queryParams = getQueryParams();
+  var queryParams = getQueryParams();
 
   if (!queryParams.name || !queryParams.group) {
     window.location.href = 'chat.html';
     return;
   }
-  const event = {
+  var event = {
     event: 'join',
     groupName: queryParams.group,
     name: queryParams.name
@@ -31,7 +32,7 @@ function onMessageReceived(event) {
     case 'users':
       chatUsersCtr.innerHTML = '';
       event.data.forEach((u) => {
-        const userEl = document.createElement('div');
+        var userEl = document.createElement('div');
         userEl.className = 'chat-user';
         userEl.innerHTML = u.name;
 
@@ -45,11 +46,11 @@ function onMessageReceived(event) {
 }
 
 function getQueryParams() {
-  const search = window.location.search.substring(1);
-  const pairs = search.split('&');
+  var search = window.location.search.substring(1);
+  var pairs = search.split('&');
   var params = {};
-  for (const pair of pairs) {
-    const parsts = pair.split('=');
+  for (var pair of pairs) {
+    var parsts = pair.split('=');
     params[decodeURIComponent(parsts[0])] = decodeURIComponent(parsts[1]);
   }
 

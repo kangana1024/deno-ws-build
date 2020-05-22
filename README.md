@@ -14,6 +14,6 @@ deno run --allow-net server.ts
 
 [http://localhost:5500/public](http://localhost:5500/public)
 
-### Ref.
+### Ref
 
 [Build Realtime Chat App with Deno and WebSockets](https://youtu.be/XWyUtYL6ynE)

@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "es2015",
+      "es2016",
+      "dom"
+    ],
+    "outDir": "./public/",
+    "target": "es6"
+  },
+  "include": [
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "public"
+  ]
+}

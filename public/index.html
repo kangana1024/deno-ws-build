@@ -31,60 +31,51 @@
             <button id="leaveGroupBtn">Leave group</button>
           </div>
         </div>
-        <div class="chat-messages">
-          <div class="message message-from">
-            <h4>John</h4>
-            <p class="message-text">Lorem ipsum smth</p>
-          </div>
-          <div class="message message-from">
-            <h4>John</h4>
-            <p class="message-text">Lorem ipsum smth</p>
-          </div>
-          <div class="message message-from">
-            <h4>John</h4>
-            <p class="message-text">Lorem ipsum smth</p>
-          </div>
-          <div class="message message-from">
-            <h4>John</h4>
-            <p class="message-text">Lorem ipsum smth</p>
-          </div>
-          <div class="message message-from">
-            <h4>John</h4>
-            <p class="message-text">Lorem ipsum smth</p>
-          </div>
-          <div class="message message-from">
-            <h4>John</h4>
-            <p class="message-text">Lorem ipsum smth</p>
-          </div>
-          <div class="message message-from">
-            <h4>John</h4>
-            <p class="message-text">Lorem ipsum smth</p>
-          </div>
-          <div class="message message-from">
+        <div id="chatMessages" class="chat-messages">
+          <!-- <div class="message message-from">
             <h4>John</h4>
             <p class="message-text">Lorem ipsum smth</p>
           </div>
           <div class="message message-to">
             <p class="message-text">Hi</p>
-          </div>
+          </div> -->
         </div>
         <div class="chat-footer">
           <form id="messageSendForm">
-            <input type="text" placeholder="Type message and hit enter" />
+            <input
+              id="messageInput"
+              type="text"
+              placeholder="Type message and hit enter"
+            />
             <button>Send</button>
           </form>
         </div>
       </div>
     </div>
 
-    <!-- <script src="client.js"></script> -->
+    <!-- <script src="js/client.js"></script> -->
     <script>
       var ws;
       var chatUsersCtr = document.querySelector('#chatUsers');
+      var chatUsersCount = document.querySelector('#chatUsersCount');
+      var senMessageForm = document.querySelector('#messageSendForm');
+      var messageInput = document.querySelector('#messageInput');
+      var chatMessagesCtr = document.querySelector('#chatMessages');
       window.addEventListener('DOMContentLoaded', function () {
         ws = new WebSocket('ws://localhost:3000/ws');
         ws.addEventListener('open', onConnectionOpen);
         ws.addEventListener('message', onMessageReceived);
+      });
+
+      senMessageForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var event = {
+          event: 'message',
+          data: messageInput.value
+        };
+
+        ws.send(JSON.stringify(event));
+        messageInput.value = '';
       });
 
       function onConnectionOpen() {
@@ -112,6 +103,7 @@
         switch (event.event) {
           case 'users':
             chatUsersCtr.innerHTML = '';
+            chatUsersCount.innerHTML = event.data.length;
             event.data.forEach((u) => {
               var userEl = document.createElement('div');
               userEl.className = 'chat-user';
@@ -120,10 +112,38 @@
               chatUsersCtr.appendChild(userEl);
             });
             break;
-
+          case 'message':
+            const messageEl = document.createElement('div');
+            messageEl.className = `message message-${
+              event.data.sender === 'me' ? 'to' : 'form'
+            }`;
+            messageEl.innerHTML = `
+            ${
+              event.data.sender === 'me' ? '' : `<h4>${event.data.name}</h4>`
+            } <p class="message-text">${event.data.message}</p>
+            `;
+            chatMessagesCtr.appendChild(messageEl);
+            break;
+          case 'previousMessages':
+            event.data.forEach(appendMessage);
+            break;
           default:
             break;
         }
+      }
+
+      function appendMessage(message) {
+        console.log('MSG:', message);
+        const messageEl = document.createElement('div');
+        messageEl.className = `message message-${
+          message.sender === 'me' ? 'to' : 'form'
+        }`;
+        messageEl.innerHTML = `
+            ${
+              message.sender === 'me' ? '' : `<h4>${message.name}</h4>`
+            } <p class="message-text">${message.message}</p>
+            `;
+        chatMessagesCtr.appendChild(messageEl);
       }
 
       function getQueryParams() {
